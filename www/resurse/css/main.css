@@ -1,0 +1,49 @@
+body {
+	font-family: "Trebuchet MS", "Arial", "Helvetica", "Verdana", "sans-serif";
+	padding:10px;
+}
+
+table {
+	font-size: 1em;
+}
+
+.demo-description {
+	clear: both;
+	padding: 12px;
+	font-size: 1.3em;
+	line-height: 1.4em;
+}
+
+.ui-draggable, .ui-droppable {
+	background-position: top;
+}
+
+#webcam {
+	border:none;
+	min-height:300px;
+	overflow:hidden;
+}
+#header {
+	width:90%;
+}
+.salutare {
+	float:left;
+	color:#333;
+	font-size:12px;
+	width:250px;
+	display:block;
+}
+.clear {
+	clear:both;
+}
+.logout {
+	float:right;
+	color:#ff0000;
+	font-size:12px;
+	width:20px;
+	display:block;
+}
+.logout a{
+	color:#ff0000;
+	font-size:12px;
+}

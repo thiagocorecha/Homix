@@ -1,0 +1,1 @@
+echo "1,AnalogWrite,3,100" > /dev/ttyACM0
