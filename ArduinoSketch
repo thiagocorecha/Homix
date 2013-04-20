@@ -1,0 +1,250 @@
+
+/*
+•  Arduino line answer ends with NL instead CR+NL
+The protocol built in functions are:
+•  PinMode
+•  DigitalRead
+•  DigitalWrite
+•  AnalogRead
+•  AnalogWrite
+•  PulseIn
+•  Tone
+•  NoTone
+•  Millis
+•  Delay
+Arduino will send to serial " |Temperatura1:val||Temperatura2:val||Light:val| "
+
+*/
+
+String        inString;    // input command string - protocol serial
+char          inByte;      // single byte from inString- protocol serial
+String        inId;        // id extracted from inString- protocol serial
+String        inFunction;  // function extracted from inString- protocol serial
+String        inArgStr[4]; // args extracted as string from inString- protocol serial
+unsigned long inArgLng[4]; // args extracted as string from inString- protocol serial
+
+int           lstRead;     // last read index - digital temperature sensor
+int           totRead;     // total read index  - digital temperature sensor
+int           arg;         // args index    - digital temperature sensor
+int           i,j,k;       // indexes
+char          cArray[10];  // character array for string to long conversion - digital temperature sensor
+
+int           intValue;    // return value
+unsigned long ulongValue;  // return value
+
+boolean       out;         // output flag
+long          x=0;         // count to display temp info TX serial
+
+#include <OneWire.h> 
+
+int DS18S20_Pin = 2;       //DS18S20 Signal pin on digital 2
+
+                          //Temperature chip i/o
+OneWire ds(DS18S20_Pin);  // on digital pin 2
+
+
+
+void setup(){
+  Serial.begin(115200); 
+  Serial.print("hello from Arduino \n");
+  inString = "";
+  inId = "";
+  inFunction = "";
+  totRead = 0;
+  arg = 0;
+  out = true;
+
+}
+
+void loop(){
+  
+  int nLight = 0;   //analog sensor
+  long nTemp = 0;   //analog sensor
+if ( x > 30000){
+  float temperature = getTemp();
+  nLight = analogRead(0); 
+  nTemp = analogRead(1) * 5000L / 1024L  / 10;
+Serial.print("|Temperatura1:");
+  Serial.print(temperature);
+  Serial.print("|");
+  Serial.print("|Temperatura2:");
+  Serial.print(nTemp);
+  Serial.print("|");
+  Serial.print("|Light:");
+  Serial.print(nLight);
+  Serial.println("|");  //serial print in format |Temperatura1:val||Temperatura2:val||Light:val|
+x=0;
+}
+  x++; // count x for delay
+}
+
+void serialEvent() { // serialEvent occurs whenever a new data comes in the hardware serial RX
+  if (lstRead = Serial.available() > 0){
+    totRead = totRead + lstRead;
+    for (i = 0; i < lstRead; i++) { // read buffer cycle
+      inByte = Serial.read();
+      if (inByte >= 32 && inByte <= 127) {
+        inString.concat(inByte);
+      }
+      // the format of the command is: id,function[,arg1][,arg2][,arg3] (id: sender id string)
+      if (inByte == 44 || inByte == 10){ // comma separates id, function and args, LF ends the command line
+        if (inId == "") { // id
+          inId.concat(inString.substring(0, totRead - 1));
+          j = totRead;
+        }
+        else if (inFunction == "") { // function
+          inFunction.concat(inString.substring(j, totRead - 1));
+          j = totRead;
+        }
+        else { // args
+          inArgStr[arg] = inString.substring(j, totRead - 1); // arg as string
+          inArgStr[arg].toCharArray(cArray,10);
+          inArgLng[arg] = atol(cArray); // arg as long
+          j = totRead;
+          arg++;
+        }
+      }
+      if (inByte == 10){ // LF ends the command line
+        CommandExec(); // executes the required command
+        inString = "";
+        inId = "";
+        inFunction = "";
+        totRead = 0;
+        arg = 0;
+        out = true;
+      }
+    }
+  }
+}
+float getTemp(){
+  //returns the temperature from one DS18S20 in DEG Celsius
+
+  byte data[12];
+  byte addr[8];
+
+  if ( !ds.search(addr)) {
+      //no more sensors on chain, reset search
+      ds.reset_search();
+      return -1000;
+  }
+
+  if ( OneWire::crc8( addr, 7) != addr[7]) {
+      Serial.println("CRC is not valid!");
+      return -1000;
+  }
+
+  if ( addr[0] != 0x10 && addr[0] != 0x28) {
+      Serial.print("Device is not recognized");
+      return -1000;
+  }
+
+  ds.reset();
+  ds.select(addr);
+  ds.write(0x44,1); // start conversion, with parasite power on at the end
+
+  byte present = ds.reset();
+  ds.select(addr);    
+  ds.write(0xBE); // Read Scratchpad
+
+  
+  for (int i = 0; i < 9; i++) { // we need 9 bytes
+    data[i] = ds.read();
+  }
+  
+  ds.reset_search();
+  
+  byte MSB = data[1];
+  byte LSB = data[0];
+
+  float tempRead = ((MSB << 8) | LSB); //using two's compliment
+  float TemperatureSum = tempRead / 16;
+  
+  return TemperatureSum; //DS18S20 temp value
+}
+
+void CommandExec() {  //read serial
+  Serial.print(inFunction);
+  if (inFunction.equalsIgnoreCase("pinMode")) {
+    pinMode(inArgLng[0], inArgLng[1]); // pin,mode
+  }
+  else if (inFunction.equalsIgnoreCase("digitalRead")) {
+    intValue = digitalRead(inArgLng[0]); // pin
+  }
+  else if (inFunction.equalsIgnoreCase("digitalWrite")) {
+    digitalWrite(inArgLng[0], inArgLng[1]); // pin,value
+  }
+  else if (inFunction.equalsIgnoreCase("analogRead")) {
+    intValue = analogRead(inArgLng[0]); // pin
+  }
+  else if (inFunction.equalsIgnoreCase("analogWrite")) {
+    analogWrite(inArgLng[0], inArgLng[1]); // pin,dutycycle
+  }
+  else if (inFunction.equalsIgnoreCase("pulseIn")) {
+    ulongValue = pulseIn(inArgLng[0], inArgLng[1], inArgLng[2]); // pin,mode,timeout
+  }
+  else if (inFunction.equalsIgnoreCase("tone")) {
+    tone(inArgLng[0], inArgLng[1]); // pin,frequency
+  }
+  else if (inFunction.equalsIgnoreCase("noTone")) {
+    noTone(inArgLng[0]); // pin
+  }
+  else if (inFunction.equalsIgnoreCase("millis")) {
+    ulongValue = millis();
+  }
+  else if (inFunction.equalsIgnoreCase("delay")) {
+    delay(inArgLng[0]); // milliseconds
+  }
+  else if (inId == "?" || inFunction == "?") {
+    Serial.print("\n");
+    Serial.print("Arduino Serial Protocol \n");
+    Serial.print("command format: id,function[,arg1][,arg2][,arg3] (id: sender id string)\n");
+    Serial.print("functions are:\n");
+    Serial.print("  PinMode,pin,mode (mode: 0 for INPUT, 2 for INPUT_PULLUP, 1 for OUTPUT)\n");
+    Serial.print("  DigitalRead,pin\n");
+    Serial.print("  DigitalWrite,pin,value (value: 0 for LOW, 1 for HIGH)\n");
+    Serial.print("  AnalogRead,pin\n");
+    Serial.print("  AnalogWrite,pin,dutycycle (dutycycle: between 0 always off and 255 always on)\n");
+    Serial.print("  PulseIn,pin,mode,timeout (mode: 0 for LOW, 1 for HIGH) (timeout unit: microseconds)\n");
+    Serial.print("  Tone,pin,frequency (frequency: between 0 to 65535)\n");
+    Serial.print("  NoTone,pin\n");
+    Serial.print("  Millis\n");
+    Serial.print("  Delay,milliseconds\n");
+    Serial.print("function use: see http://arduino.cc/en/Reference/HomePage\n");
+    Serial.print("\n");
+    out = false;
+  }
+  
+  
+  else if (inFunction == "") {
+    out = false;
+  }
+  else {
+    Serial.print("error,unknown command\n");
+    out = false;
+  }
+  if (out) { // output management
+    // the format of the answer is: id,- or id,value
+    Serial.print(inId); // returns the sender id
+    Serial.print(",");
+    if (inFunction.equalsIgnoreCase("digitalRead")) { // digitalRead value
+      Serial.print(intValue);
+      Serial.print("\n");
+    }
+    else if (inFunction.equalsIgnoreCase("analogRead")) { // analogRead value
+      Serial.print(intValue);
+      Serial.print("\n");
+    }
+    else if (inFunction.equalsIgnoreCase("pulseIn")) { // pulseIn value
+      Serial.print(ulongValue);
+      Serial.print("\n");
+    }
+    else if (inFunction.equalsIgnoreCase("millis")) { // millis value
+      Serial.print(ulongValue);
+      Serial.print("\n");
+    }
+    else {
+      Serial.print("-\n"); // if no value returns a -
+    }
+  }
+}
+
