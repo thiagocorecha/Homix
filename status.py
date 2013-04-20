@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-import sys
 import os
 import re
 from datetime import datetime
@@ -9,10 +8,10 @@ import json
 STATE_FILE = os.environ.get('STATE_FILE', '/tmp/arduino_state.json')
 
 
-def read_lines():
+def read_lines(infile):
     buf = ''
     while True:
-        buf += sys.stdin.read(10)
+        buf += infile.read(10)
         while '\n' in buf:
             line, buf = buf.split('\n', 1)
             yield line.strip()
@@ -22,8 +21,8 @@ status_pattern = re.compile(r'^\|Temperatura\:(?P<temp>\d+)\|'
                             r'\|Light\:(?P<light>\d+)\|$')
 
 
-def update_loop():
-    for line in read_lines():
+def update_loop(infile):
+    for line in read_lines(infile):
         match = status_pattern.match(line)
         if match is not None:
             state = {
@@ -42,7 +41,8 @@ def save_state(state):
 
 
 def main():
-    update_loop()
+    with open('/dev/ttyACM0', 'rb') as infile:
+        update_loop(infile)
 
 
 if __name__ == '__main__':
