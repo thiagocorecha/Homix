@@ -3,10 +3,12 @@
 import os
 import re
 from datetime import datetime
+import time
 import json
 import subprocess
 
 STATE_FILE = os.environ.get('STATE_FILE', '/tmp/arduino_state.json')
+SAVE_INTERVAL = 10
 
 
 def read_lines(infile):
@@ -23,6 +25,7 @@ status_pattern = re.compile(r'^\|Temperatura\:(?P<temp>\d+)\|'
 
 
 def update_loop(infile):
+    last_save = 0
     for line in read_lines(infile):
         match = status_pattern.match(line)
         if match is not None:
@@ -31,7 +34,10 @@ def update_loop(infile):
                 'light': int(match.group('light')),
                 'timestamp': datetime.now().isoformat(),
             }
-            save_state(state)
+            now = time.time()
+            if now - last_save > SAVE_INTERVAL:
+                save_state(state)
+                last_save = now
 
 
 def save_state(state):
