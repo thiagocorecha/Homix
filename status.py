@@ -4,6 +4,7 @@ import os
 import re
 from datetime import datetime
 import json
+import subprocess
 
 STATE_FILE = os.environ.get('STATE_FILE', '/tmp/arduino_state.json')
 
@@ -34,10 +35,9 @@ def update_loop(infile):
 
 
 def save_state(state):
-    temp_state_file = STATE_FILE + '.tmp'
-    with open(temp_state_file, 'wb') as f:
-        json.dump(state, f, indent=2)
-    os.rename(temp_state_file, STATE_FILE)
+    sqlcmd = 'UPDATE acm SET temperatura="{temp}", lumina="{light}"'
+    subprocess.check_call(['mysql', '-u', 'root', '-proot', 'homix',
+                           '-e', sqlcmd.format(**state)])
 
 
 def main():
