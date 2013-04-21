@@ -25,15 +25,9 @@ status_pattern = re.compile(r'^\|Temperatura\:(?P<temp>\d+)\|'
                             r'\|Light\:(?P<light>\d+)\|$')
 
 
-def update_loop(infile, outpipe):
+def update_loop(infile):
     last_save = 0
     for line in read_lines(infile):
-        if line:
-            try:
-	        print>>outpipe, line
-	        outpipe.flush()
-            except:
-                pass
         match = status_pattern.match(line)
         if match is not None:
             state = {
@@ -59,8 +53,7 @@ def main():
     except OSError:
         pass
     with open('/dev/ttyACM0', 'rb') as infile:
-        with open(RAW_OUT_PIPE, 'wb') as outpipe:
-            update_loop(infile, outpipe)
+        update_loop(infile)
 
 
 if __name__ == '__main__':
