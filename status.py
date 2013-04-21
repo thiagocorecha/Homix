@@ -29,8 +29,11 @@ def update_loop(infile, outpipe):
     last_save = 0
     for line in read_lines(infile):
         if line:
-	    print>>outpipe, line
-	    outpipe.flush()
+            try:
+	        print>>outpipe, line
+	        outpipe.flush()
+            except:
+                pass
         match = status_pattern.match(line)
         if match is not None:
             state = {
