@@ -8,7 +8,6 @@ import json
 import subprocess
 
 STATE_FILE = os.environ.get('STATE_FILE', '/tmp/arduino_state.json')
-RAW_OUT_PIPE = 'raw_out'
 SAVE_INTERVAL = 10
 
 
@@ -48,10 +47,6 @@ def save_state(state):
 
 
 def main():
-    try:
-        os.mkfifo(RAW_OUT_PIPE)
-    except OSError:
-        pass
     with open('/dev/ttyACM0', 'rb') as infile:
         update_loop(infile)
 
