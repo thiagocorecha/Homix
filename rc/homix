@@ -1,7 +1,11 @@
 #!/bin/bash
 
-/var/local/Homix/port.sh
+cd /var/local/Homix
 
-motion -n > /dev/null 2> /dev/null &
+./port.sh
 
-cd /var/local/Homix; ./status.py &
+./memdb.sh
+
+./status.py &
+
+#motion -n > /dev/null 2> /dev/null &
