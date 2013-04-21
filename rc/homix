@@ -8,4 +8,6 @@ cd /var/local/Homix
 
 ./status.py &
 
+./cron.py &
+
 #motion -n > /dev/null 2> /dev/null &
