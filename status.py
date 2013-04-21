@@ -8,7 +8,7 @@ import json
 import subprocess
 
 STATE_FILE = os.environ.get('STATE_FILE', '/tmp/arduino_state.json')
-SAVE_INTERVAL = 10
+SAVE_INTERVAL = 2
 
 
 def read_lines(infile):

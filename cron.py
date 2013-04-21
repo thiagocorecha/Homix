@@ -3,7 +3,7 @@
 import time
 import subprocess
 
-INTERVAL = 10
+INTERVAL = 2
 
 
 def main():
